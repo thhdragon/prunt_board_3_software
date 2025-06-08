@@ -524,7 +524,7 @@ procedure Prunt_Board_3_Server is
         Config_Path                => "./prunt_board_3.json",
         Update_Check               =>
           (Method       => Github,
-           Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_2_software"),
+           Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_3_software"),
            Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.0.0")));
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence) is
