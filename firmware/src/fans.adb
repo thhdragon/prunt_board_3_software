@@ -141,6 +141,12 @@ package body Fans is
          Prescaler : UInt32;
          Period    : UInt32;
       begin
+         declare
+            Points : GPIO_Points := (Fan_LS_GPIO_Points (Fan), Fan_HS_GPIO_Points (Fan));
+         begin
+            Clear (Points);
+         end;
+
          Configure_IO
            (Fan_LS_GPIO_Points (Fan),
             (Mode => Mode_Out, Resistors => Floating, Output_Type => Push_Pull, Speed => Speed_25MHz));
@@ -159,18 +165,18 @@ package body Fans is
          Configure (This => Fan_Timers (Fan).all, Prescaler => UInt16 (Prescaler), Period => Period);
          Enable (Fan_Timers (Fan).all);
          Set_PWM (Fan, Last_PWMs (Fan));
-         Enable_Channel (Fan_Timers (Fan).all, Fan_Timer_LS_Channels (Fan));
-         Enable_Channel (Fan_Timers (Fan).all, Fan_Timer_HS_Channels (Fan));
 
          if Use_High_Side then
+            Enable_Channel (Fan_Timers (Fan).all, Fan_Timer_HS_Channels (Fan));
             Configure_IO
-              (Fan_LS_GPIO_Points (Fan),
+              (Fan_HS_GPIO_Points (Fan),
                (Mode           => Mode_AF,
                 Resistors      => Floating,
                 AF_Output_Type => Push_Pull,
                 AF_Speed       => Speed_25MHz,
                 AF             => Fan_HS_GPIO_AFs (Fan)));
          else
+            Enable_Channel (Fan_Timers (Fan).all, Fan_Timer_LS_Channels (Fan));
             Configure_IO
               (Fan_LS_GPIO_Points (Fan),
                (Mode           => Mode_AF,
@@ -178,6 +184,12 @@ package body Fans is
                 AF_Output_Type => Push_Pull,
                 AF_Speed       => Speed_25MHz,
                 AF             => Fan_LS_GPIO_AFs (Fan)));
+
+            declare
+               Point : GPIO_Point := Fan_HS_GPIO_Points (Fan);
+            begin
+               Set (Point);
+            end;
          end if;
       end Reconfigure;
 
