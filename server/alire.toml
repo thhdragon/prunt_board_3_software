@@ -10,7 +10,7 @@ executables = ["prunt_board_3_server"]
 prunt = "*"
 prunt_board_3_shared = "*"
 [[pins]]
-prunt = { path = "../../prunt" }
+prunt = { url = "https://github.com/Prunt3D/prunt.git" }
 prunt_board_3_shared = { path = "../shared" }
 
 [build-switches]
