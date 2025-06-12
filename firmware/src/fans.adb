@@ -118,12 +118,12 @@ package body Fans is
 
          for Fan in Fan_Name loop
             Init_PWM_Timer (Fan_Timers (Fan).all, Fan_Timer_LS_Channels (Fan), Low);
-            Init_PWM_Timer (Fan_Timers (Fan).all, Fan_Timer_HS_Channels (Fan), Low);
+            Init_PWM_Timer (Fan_Timers (Fan).all, Fan_Timer_HS_Channels (Fan), High);
 
             declare
                Points : GPIO_Points := (Fan_LS_GPIO_Points (Fan), Fan_HS_GPIO_Points (Fan));
             begin
-               Clear (Points);
+               Set (Points);
             end;
 
             Configure_IO
@@ -144,7 +144,7 @@ package body Fans is
          declare
             Points : GPIO_Points := (Fan_LS_GPIO_Points (Fan), Fan_HS_GPIO_Points (Fan));
          begin
-            Clear (Points);
+            Set (Points);
          end;
 
          Configure_IO

@@ -21,7 +21,7 @@ private
       function Get_PWM (Fan : Fan_Name) return PWM_Scale;
       function Get_Tach_Counter (Fan : Fan_Name) return Tach_Counter;
    private
-      Last_PWMs : Fan_PWMs := (others => 0.0);
+      Last_PWMs : Fan_PWMs := (others => 1.0);
    end Fan_Handlers;
 
    Init_Checker : Init_Checkers.Init_Checker;
