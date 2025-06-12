@@ -572,7 +572,9 @@ begin
         with "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path> [--reboot-to-kalico]";
    end if;
 
-   My_Communications.Runner.Init (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
+   My_Communications.Runner.Init
+     (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")),
+      Argument_Value ("--force-firmware-update=", "") = "do-not-use-this-argument");
 
    for Arg in 1 .. Argument_Count loop
       if Argument (Arg) = "--reboot-to-kalico" then

@@ -351,7 +351,7 @@ package body Communications is
       end Send_And_Handle_Reply;
 
    begin
-      accept Init (Port_Name : GNAT.Serial_Communications.Port_Name) do
+      accept Init (Port_Name : GNAT.Serial_Communications.Port_Name; Force_Firmware_Update : Boolean) do
          GNAT.Serial_Communications.Open (Port, Port_Name);
          GNAT.Serial_Communications.Set
            (Port      => Port,
@@ -412,12 +412,22 @@ package body Communications is
 
                   Log ("Firmware version " & Received_Message.Content.Version'Image & ".");
 
-                  exit when Received_Message.Content.Version = 4;
+                  exit when Received_Message.Content.Version = 4 and not Force_Firmware_Update;
 
                   Log ("Firmware version 4 required.");
 
                   if Already_Tried_Update then
-                     raise Constraint_Error with "Board firmware update failed.";
+                     if Force_Firmware_Update then
+                        loop
+                           Log
+                             ("The force-firmware-update argument is only intended to be used during development as "
+                              & "firmware updates cause irreversible wear to the MCU flash. The firmware has been "
+                              & "flashed, but Prunt will not run until the argument is removed.");
+                           delay 5.0;
+                        end loop;
+                     else
+                        raise Constraint_Error with "Board firmware update failed.";
+                     end if;
                   else
                      Already_Tried_Update := True;
                      Prompt_For_Update;
