@@ -491,8 +491,8 @@ procedure Prunt_Board_3_Server is
    Stepper_UART_Address : constant array (Stepper_Name) of Prunt.TMC_Types.TMC2240.UART_Node_Address :=
      (Stepper_1 => 6, Stepper_2 => 4, Stepper_3 => 3, Stepper_4 => 2, Stepper_5 => 5, Stepper_6 => 1);
 
-   Fan_Maximum_Low_Side_Frequency : constant Frequency := 25_000.0 * hertz;
-   Fan_Maximum_High_Side_Frequency  : constant Frequency := 100.0 * hertz;
+   Fan_Maximum_Low_Side_Frequency  : constant Frequency := 25_000.0 * hertz;
+   Fan_Maximum_High_Side_Frequency : constant Frequency := 100.0 * hertz;
 
    package My_Controller is new
      Prunt.Controller
