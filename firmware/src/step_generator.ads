@@ -72,12 +72,12 @@ private
    end Timer_Reload_Handler;
 
    HRTim_Map : constant array (Stepper_Name) of access HRTimer_Channel :=
-     (Stepper_1 => STM32.Device.HRTimer_C'Access,
-      Stepper_2 => STM32.Device.HRTimer_D'Access,
+     (Stepper_1 => STM32.Device.HRTimer_B'Access,
+      Stepper_2 => STM32.Device.HRTimer_A'Access,
       Stepper_3 => STM32.Device.HRTimer_E'Access,
-      Stepper_4 => STM32.Device.HRTimer_A'Access,
-      Stepper_5 => STM32.Device.HRTimer_B'Access,
-      Stepper_6 => STM32.Device.HRTimer_F'Access);
+      Stepper_4 => STM32.Device.HRTimer_C'Access,
+      Stepper_5 => STM32.Device.HRTimer_F'Access,
+      Stepper_6 => STM32.Device.HRTimer_D'Access);
 
    Step_Count_To_Period : constant array (Step_Count) of UInt16 :=
      (0 => 0, for I in 1 .. Step_Count'Last => 60_000 / UInt16 (I));
