@@ -2637,17 +2637,17 @@ package body STM32.HRTimers is
    is
    begin
       if This'Address = HRTIM_TIMA_Base then
-            HRTimer_Common_Periph.CR2.TARST := Swap = Enable;
+            HRTimer_Common_Periph.CR2.SWPA := Swap = Enable;
       elsif This'Address = HRTIM_TIMB_Base then
-            HRTimer_Common_Periph.CR2.TBRST := Swap = Enable;
+            HRTimer_Common_Periph.CR2.SWPB := Swap = Enable;
       elsif This'Address = HRTIM_TIMC_Base then
-            HRTimer_Common_Periph.CR2.TCRST := Swap = Enable;
+            HRTimer_Common_Periph.CR2.SWPC := Swap = Enable;
       elsif This'Address = HRTIM_TIMD_Base then
-            HRTimer_Common_Periph.CR2.TDRST := Swap = Enable;
+            HRTimer_Common_Periph.CR2.SWPD := Swap = Enable;
       elsif This'Address = HRTIM_TIME_Base then
-            HRTimer_Common_Periph.CR2.TERST := Swap = Enable;
+            HRTimer_Common_Periph.CR2.SWPE := Swap = Enable;
       elsif This'Address = HRTIM_TIMF_Base then
-            HRTimer_Common_Periph.CR2.TFRST := Swap = Enable;
+            HRTimer_Common_Periph.CR2.SWPF := Swap = Enable;
       end if;
    end Set_Swap_Outputs;
 

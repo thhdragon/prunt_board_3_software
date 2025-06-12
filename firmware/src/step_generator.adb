@@ -70,6 +70,8 @@ package body Step_Generator is
       HRTimer_Init (STM32.Device.HRTimer_E);
       HRTimer_Init (STM32.Device.HRTimer_F);
 
+      Set_Swap_Outputs (STM32.Device.HRTimer_A, Enable);
+
       Configure_Prescaler (STM32.Device.HRTimer_M, Div_4); --  8x HRTIM clock
       Set_Counter_Operating_Mode (STM32.Device.HRTimer_M, Continuous);
       Set_Period (STM32.Device.HRTimer_M, 60_000); --  Divide 1200MHz by this value, assuming 150MHz clock.
