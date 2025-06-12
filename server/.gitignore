@@ -3,3 +3,5 @@
 /alire/
 /config/
 /.dir-locals.el
+/src/embedded_resources.ads
+/src/embedded_resources.adb
