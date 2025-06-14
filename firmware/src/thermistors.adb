@@ -30,6 +30,11 @@ package body Thermistors is
       return ADC_Handler.Last_Reported_Temperature (Thermistor);
    end Last_Reported_Temperature;
 
+   function Init_Is_Done return Boolean is
+   begin
+      return ADC_Handler.Init_Is_Done;
+   end Init_Is_Done;
+
    protected body ADC_Handler is
       procedure Init is
       begin
@@ -124,6 +129,11 @@ package body Thermistors is
       begin
          return Last_Temperatures (Thermistor);
       end Last_Reported_Temperature;
+
+      function Init_Is_Done return Boolean is
+      begin
+         return Init_Done;
+      end Init_Is_Done;
 
       procedure Start_ISR_Loop is
       begin

@@ -11,6 +11,7 @@ with Ada.Real_Time; use Ada.Real_Time;
 with System;
 with Self_Check;
 with MCU_Temperature;
+with Current_Sense;
 
 with Last_Chance_Handler;
 pragma Unreferenced (Last_Chance_Handler);
@@ -52,6 +53,7 @@ begin
 
    Thermistors.Init;
    MCU_Temperature.Init;
+   Current_Sense.Init;
 
    Server_Communication.Run;
 

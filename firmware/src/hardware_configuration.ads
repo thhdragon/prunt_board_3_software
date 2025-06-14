@@ -78,20 +78,20 @@ package Hardware_Configuration is
      (Heater_1 => GPIO_AF_TIM20_3, Heater_2 => GPIO_AF_TIM17_10, Heater_3 => GPIO_AF_TIM1_6);
    --  Heaters package also uses IWDG.
 
-   --  TODO: Implement current sense functionality.
-   Internal_Heater_CS_DMA_Interrupt_Priority : constant Interrupt_Priority := Interrupt_Priority'Last_Valid - 1;
+   Internal_Heater_CS_DMA_Interrupt_Priority : constant Interrupt_Priority := Interrupt_Priority'Last_Valid - 2;
    Internal_Heater_CS_DMA_Interrupt_ID       : constant Interrupt_ID := DMA2_CH3_Interrupt;
    Internal_Heater_CS_DMA_Controller         : DMA_Controller renames DMA_2;
    Internal_Heater_CS_DMA_Stream             : constant DMA_Stream_Selector := Stream_3;
    Internal_Heater_CS_DMA_Priority           : constant DMA_Priority_Level := Priority_Very_High;
    Internal_Heater_CS_DMA_Channel            : constant DMA_Channel_Selector := ADC2;
 
-   Internal_Heater_CS_ADC          : Analog_To_Digital_Converter renames ADC_2;
-   Internal_Heater_CS_ADC_Internal : aliased STM32_SVD.ADC.ADC1_Peripheral
+   Internal_Heater_CS_ADC                      : Analog_To_Digital_Converter renames ADC_2;
+   Internal_Heater_CS_ADC_Internal             : aliased STM32_SVD.ADC.ADC1_Peripheral
    with Volatile, Import, Address => STM32_SVD.ADC2_Base;
-   Internal_Heater_CS_ADC_Channels : constant array (Internal_Heater_Name) of Analog_Input_Channel :=
+   Internal_Heater_CS_ADC_Overrun_Interrupt_ID : constant Interrupt_ID := ADC1_2_Interrupt;
+   Internal_Heater_CS_ADC_Channels             : constant array (Internal_Heater_Name) of Analog_Input_Channel :=
      (Heater_1 => 5, Heater_2 => 10);
-   Internal_Heater_CS_GPIO_Points  : constant array (Internal_Heater_Name) of GPIO_Point :=
+   Internal_Heater_CS_GPIO_Points              : constant array (Internal_Heater_Name) of GPIO_Point :=
      (Heater_1 => PC4, Heater_2 => PF1);
 
    Internal_Heater_OC_GPIO_Points : constant array (Internal_Heater_Name) of GPIO_Point :=

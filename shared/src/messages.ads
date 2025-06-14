@@ -53,7 +53,7 @@ package Messages is
 
    type Fixed_Point_PWM_Scale is delta 2.0**(-14) range 0.0 .. 1.0 with Size => 16, Small => 2.0**(-14);
 
-   type Fixed_Point_Internal_Heater_Current is delta 2.0**(-10) range 0.0 .. 50.0 with Size => 16, Small => 2.0**(-10);
+   type Fixed_Point_Internal_Heater_Current is delta 2.0**(-10) range -25.0 .. 25.0 with Size => 16, Small => 2.0**(-10);
 
    type CRC32 is mod 2**32 with Size => 32;
 

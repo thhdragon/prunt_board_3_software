@@ -18,6 +18,7 @@ package Thermistors is
    procedure Setup (Thermistor_Curves : access Thermistor_Curves_Array; Heater_Map : Heater_Thermistor_Map);
    procedure Start_ISR_Loop;
    function Last_Reported_Temperature (Thermistor : Thermistor_Name) return Temperature;
+   function Init_Is_Done return Boolean;
 
    Bad_Reading_Error : exception;
 
@@ -53,6 +54,7 @@ private
       procedure Setup (Thermistor_Curves : access Thermistor_Curves_Array; Heater_Map : Heater_Thermistor_Map);
       procedure Start_ISR_Loop;
       function Last_Reported_Temperature (Thermistor : Thermistor_Name) return Temperature;
+      function Init_Is_Done return Boolean;
    private
       Curves             : Float_Thermistor_Curves_Array;
       Heater_Thermistors : Heater_Thermistor_Map;

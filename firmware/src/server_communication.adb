@@ -17,6 +17,7 @@ with Thermistors;
 with Heaters;
 with Fans;
 with MCU_Temperature;
+with Current_Sense;
 with System.Machine_Code;
 with System.Machine_Reset;
 
@@ -375,6 +376,12 @@ package body Server_Communication is
             --  We always update these fields, even if the server asked for a resend.
             for Heater in Heater_Name loop
                TX_Message.Content.Heater_PWMs (Heater) := Heaters.Get_PWM (Heater);
+            end loop;
+
+            for Heater in Internal_Heater_Name loop
+               --  It is not possible for this cast to be out of range.
+               TX_Message.Content.Internal_Heaters_Currents (Heater) :=
+                 Fixed_Point_Internal_Heater_Current (Current_Sense.Last_Reported_Current (Heater));
             end loop;
 
             for Thermistor in Thermistor_Name loop
