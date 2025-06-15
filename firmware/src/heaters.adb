@@ -59,7 +59,7 @@ package body Heaters is
    procedure Make_Safe is
    begin
       for Heater in Heater_Name loop
-         Configure_IO (Heater_GPIO_Points (Heater), (Mode => Mode_In, Resistors => Pull_Down));
+         Configure_IO (Heater_GPIO_Points (Heater), (Mode => Mode_In, Resistors => Pull_Up));
       end loop;
    end Make_Safe;
 
