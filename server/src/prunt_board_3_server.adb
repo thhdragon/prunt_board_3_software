@@ -579,6 +579,7 @@ begin
 
    for Arg in 1 .. Argument_Count loop
       if Argument (Arg) = "--reboot-to-kalico" then
+         raise Constraint_Error with "Klipper/Kalico support is not yet implemented.";
          My_Communications.Runner.Send_Message
            ((Kind           => Kalico_Reboot_Kind,
              Index          => <>,
