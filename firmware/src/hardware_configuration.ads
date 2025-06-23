@@ -55,7 +55,7 @@ package Hardware_Configuration is
    --  Input_Switches
 
    Switch_Points : constant array (Input_Switch_Name) of GPIO_Point :=
-     (Endstop_1 => PC15, Endstop_2 => PC14, Endstop_3 => PC13, Endstop_4 => PB6, Stepper_Diag_0 => PA12);
+     (Endstop_1 => PB6, Endstop_2 => PC13, Endstop_3 => PC14, Endstop_4 => PC15, Stepper_Diag_0 => PA12);
 
    --  Step_Generator
 
