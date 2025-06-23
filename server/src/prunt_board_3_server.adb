@@ -484,8 +484,8 @@ procedure Prunt_Board_3_Server is
 
    procedure Reset is
    begin
-      --  TODO
-      My_Communications.Runner.Shutdown;
+      My_Communications.Runner.Restart;
+      My_Communications.Runner.Init (False);
    end Reset;
 
    Stepper_UART_Address : constant array (Stepper_Name) of Prunt.TMC_Types.TMC2240.UART_Node_Address :=
@@ -572,9 +572,10 @@ begin
         with "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path> [--reboot-to-kalico]";
    end if;
 
+   My_Communications.Runner.Open_Port
+     (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
    My_Communications.Runner.Init
-     (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")),
-      Argument_Value ("--force-firmware-update=", "") = "do-not-use-this-argument");
+     (Argument_Value ("--force-firmware-update=", "") = "do-not-use-this-argument");
 
    for Arg in 1 .. Argument_Count loop
       if Argument (Arg) = "--reboot-to-kalico" then
@@ -583,14 +584,14 @@ begin
              Index          => <>,
              TMC_Write_Data => (others => 0),
              TMC_Read_Data  => (others => 0)));
-         My_Communications.Runner.Shutdown;
+         My_Communications.Runner.Restart;
          GNAT.OS_Lib.OS_Abort;
       end if;
    end loop;
 
    My_Controller.Run;
 
-   My_Communications.Runner.Shutdown;
+   My_Communications.Runner.Restart;
    GNAT.OS_Lib.OS_Abort;
 exception
    when E : others =>
