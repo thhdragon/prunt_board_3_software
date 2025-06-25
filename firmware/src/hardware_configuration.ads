@@ -149,12 +149,11 @@ package Hardware_Configuration is
 
    type Tach_Mux_Index is range 1 .. 4;
 
-   type Tach_Config_Kind is (Timer_Kind, LPTimer_Kind);
+   type Tach_Config_Kind is (Timer_Kind, LPTimer_Kind, In_Step_Generator_Loop_Kind);
 
    type Tach_Config (Kind : Tach_Config_Kind := Timer_Kind) is record
-      Point     : GPIO_Point;
-      Comp      : access Comparator;
-      Mux_Index : Tach_Mux_Index;
+      Point : GPIO_Point;
+      Comp  : access Comparator;
       case Kind is
          when Timer_Kind =>
             Tim     : access Timer;
@@ -163,40 +162,21 @@ package Hardware_Configuration is
          when LPTimer_Kind =>
             LPTim : access LPTimer;
             Clock : LPTimer_Input_Clock_Enum;
+
+         when In_Step_Generator_Loop_Kind =>
+            null;
       end case;
    end record;
 
-   --  TODO: Use LP timer so we can measure 2 tachs at once.
-
    Tach_Configs : constant array (Fan_Name) of Tach_Config :=
-     (Fan_1 =>
-        (Kind      => Timer_Kind,
-         Point     => PA7,
-         Comp      => Comp_2'Access,
-         Mux_Index => 1,
-         Tim       => Timer_5'Access,
-         Trigger   => Comp_2_Output),
-      Fan_2 =>
-        (Kind      => Timer_Kind,
-         Point     => PB0,
-         Comp      => Comp_4'Access,
-         Mux_Index => 2,
-         Tim       => Timer_5'Access,
-         Trigger   => Comp_4_Output),
-      Fan_3 =>
-        (Kind      => Timer_Kind,
-         Point     => PB1,
-         Comp      => Comp_1'Access,
-         Mux_Index => 3,
-         Tim       => Timer_5'Access,
-         Trigger   => Comp_1_Output),
-      Fan_4 =>
-        (Kind      => Timer_Kind,
-         Point     => PB11,
-         Comp      => Comp_6'Access,
-         Mux_Index => 4,
-         Tim       => Timer_5'Access,
-         Trigger   => Comp_6_Output));
+     (Fan_1 => (Kind => In_Step_Generator_Loop_Kind, Point => PA7, Comp => Comp_2'Access),
+      --  Fan_2 =>
+      --    (Kind => Timer_Kind, Point => PB0, Comp => Comp_4'Access, Tim => Timer_5'Access, Trigger => Comp_4_Output),
+      --  Fan_3 =>
+      --    (Kind => LPTimer_Kind, Point => PB1, Comp => Comp_1'Access, LPTim => LPTimer_1'Access, Clock => Option_1),
+      Fan_2 => (Kind => In_Step_Generator_Loop_Kind, Point => PB0, Comp => Comp_4'Access),
+      Fan_3 => (Kind => In_Step_Generator_Loop_Kind, Point => PB1, Comp => Comp_1'Access),
+      Fan_4 => (Kind => In_Step_Generator_Loop_Kind, Point => PB11, Comp => Comp_6'Access));
 
    --  MCU_Temperature uses ADC_5.
 

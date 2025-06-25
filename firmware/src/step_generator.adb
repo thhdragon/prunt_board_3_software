@@ -2,6 +2,7 @@ with STM32.GPIO; use STM32.GPIO;
 with HAL;        use HAL;
 with Input_Switches;
 with Last_Chance_Handler;
+with Fans;
 
 package body Step_Generator is
 
@@ -214,6 +215,10 @@ package body Step_Generator is
          Dirs  : Step_Delta_Dirs renames Step_Delta_Buffer (Step_Delta_Buffer_Reader_Index).Dirs;
       begin
          Clear_Pending_Interrupt (STM32.Device.HRTimer_M, Update_Interrupt);
+
+         Fans.Update_Software_Fan_Counters;
+         --  This procedure runs at 20 kHz so this should be just as good as using interrupts since the tachometer
+         --  inputs are limited by hardware filters to somewhere between 2 kHz and 10 kHz.
 
          if Is_Idle or Buffer_Ran_Dry then
             return;

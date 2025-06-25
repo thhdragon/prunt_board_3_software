@@ -1,10 +1,9 @@
-with STM32.GPIO;             use STM32.GPIO;
-with HAL;                    use HAL;
-with STM32.Device;           use STM32.Device;
-with STM32.Timers;           use STM32.Timers;
-with STM32.LPTimers;         use STM32.LPTimers;
-with STM32.COMP;             use STM32.COMP;
-with Hardware_Configuration; use Hardware_Configuration;
+with HAL.GPIO;
+with STM32.GPIO;     use STM32.GPIO;
+with HAL;            use HAL;
+with STM32.Device;   use STM32.Device;
+with STM32.Timers;   use STM32.Timers;
+with STM32.LPTimers; use STM32.LPTimers;
 with STM32.SYSCFG;
 
 package body Fans is
@@ -39,6 +38,34 @@ package body Fans is
       Init_Checker.Raise_If_Init_Not_Done;
       return Fan_Handlers.Get_Tach_Counter (Fan);
    end Get_Tach_Counter;
+
+   procedure Update_Software_Fan_Counters is
+   begin
+      for F in Fan_Name loop
+         if Tach_Configs (F).Kind = In_Step_Generator_Loop_Kind then
+            --  declare
+            --     State : constant Comparator_Output := Get_Comparator_Output (Tach_Configs (F).Comp.all);
+            --  begin
+            --     if Software_Fan_Counters_Last_States (F) /= State then
+            --        if State = High then
+            --           Software_Fan_Counters (F) := @ + 1;
+            --        end if;
+            --     end if;
+            --     Software_Fan_Counters_Last_States (F) := State;
+            --  end;
+            declare
+               State : constant Boolean := Set (Tach_Configs (F).Point);
+            begin
+               if Software_Fan_Counters_Last_States (F) /= State then
+                  if State = True then
+                     Software_Fan_Counters (F) := @ + 1;
+                  end if;
+               end if;
+               Software_Fan_Counters_Last_States (F) := State;
+            end;
+         end if;
+      end loop;
+   end Update_Software_Fan_Counters;
 
    protected body Fan_Handlers is
       procedure Init is
@@ -84,6 +111,10 @@ package body Fans is
 
          procedure Init_Tach (Config : Tach_Config) is
          begin
+            Configure_IO (Config.Point, (Mode_In, Floating));
+            --  TODO: Remove when we get comparators working.
+            return;
+
             Configure_IO (Config.Point, (Mode_Analog, Floating));
             Configure_Comparator
               (Config.Comp.all,
@@ -110,6 +141,9 @@ package body Fans is
                   Enable (Config.LPTim.all);
                   Set_Autoreload_Value (Config.LPTim.all, UInt16'Last);
                   Select_Pulse_Mode (Config.LPTim.all, Repetitive);
+
+               when In_Step_Generator_Loop_Kind =>
+                  null;
             end case;
          end Init_Tach;
       begin
@@ -231,6 +265,9 @@ package body Fans is
 
             when LPTimer_Kind =>
                return Tach_Counter (Current_Counter (Tach_Configs (Fan).LPTim.all));
+
+            when In_Step_Generator_Loop_Kind =>
+               return Tach_Counter (Software_Fan_Counters (Fan) mod 2**16);
          end case;
       end Get_Tach_Counter;
    end Fan_Handlers;
