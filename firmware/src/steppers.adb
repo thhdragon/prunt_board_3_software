@@ -3,7 +3,7 @@ with Hardware_Configuration; use Hardware_Configuration;
 with STM32.GPIO;             use STM32.GPIO;
 with STM32.Device;           use STM32.Device;
 with STM32.DMA;              use STM32.DMA;
-with Server_Communication;
+with TMC2240;
 
 package body Steppers is
 
@@ -22,7 +22,7 @@ package body Steppers is
       Set_Flow_Control (TMC_UART, No_Flow_Control);
       Set_Baud_Rate (TMC_UART, 19_200);
       TMC_UART_Internal.CR1.FIFOEN := True;
-      TMC_UART_Internal.CR3.HDSEL  := True;
+      TMC_UART_Internal.CR3.HDSEL := True;
 
       Enable (TMC_UART);
 
@@ -41,7 +41,7 @@ package body Steppers is
       Configure
         (TMC_UART_DMA_RX_Controller,
          TMC_UART_DMA_RX_Stream,
-        (Channel                       => TMC_UART_DMA_RX_Channel,
+         (Channel                      => TMC_UART_DMA_RX_Channel,
           Direction                    => Peripheral_To_Memory,
           Increment_Peripheral_Address => False,
           Increment_Memory_Address     => True,
@@ -74,6 +74,40 @@ package body Steppers is
       end;
 
       Init_Checker.Report_Init_Done;
+
+      declare
+         Message : TMC2240.UART_Data_Message :=
+           (Bytes_Mode => False,
+            Content    =>
+              (Node          => 1,
+               Register      => TMC2240.CHOPCONF_Address,
+               CHOPCONF_Data =>
+                 (TOFF                 => TMC2240.Disable_Driver,
+                  HSTRT_TFD210         => 5,
+                  HEND_OFFSET          => 2,
+                  FD3                  => 0,
+                  DISFDCC              => TMC2240.False,
+                  Reserved_1           => 0,
+                  CHM                  => TMC2240.SpreadCycle_Mode,
+                  TBL                  => TMC2240.Blank_36,
+                  Reserved_2           => 0,
+                  VHIGHFS              => TMC2240.False,
+                  VHIGHCHM             => TMC2240.False,
+                  TPFD                 => 4,
+                  Microstep_Resolution => TMC2240.MS_256,
+                  Interpolate          => TMC2240.False,
+                  Double_Edge          => TMC2240.True,
+                  Disable_S2G          => TMC2240.False,
+                  Disable_S2Vs         => TMC2240.False),
+               others        => <>));
+      begin
+         for I in TMC2240.UART_Node_Address range 1 .. 6 loop
+            delay until Clock + Milliseconds (10);
+            Message.Content.Node := I;
+            Message.Content.CRC := TMC2240.Compute_CRC (Message);
+            UART_IO.Write ((for I in 1 .. 8 => TMC2240_UART_Byte (Message.Bytes (9 - I))));
+         end loop;
+      end;
    end Init;
 
    protected body UART_IO is
@@ -124,9 +158,8 @@ package body Steppers is
       begin
          return
            Read_Started
-           and then
-           (Status (TMC_UART_DMA_RX_Controller, TMC_UART_DMA_RX_Stream, Transfer_Complete_Indicated)
-            or else Clock > Read_Start_Time + Milliseconds (100));
+           and then (Status (TMC_UART_DMA_RX_Controller, TMC_UART_DMA_RX_Stream, Transfer_Complete_Indicated)
+                     or else Clock > Read_Start_Time + Milliseconds (100));
       end Read_Result_Ready;
 
       procedure Get_Read_Result (Output : out TMC2240_UART_Data_Byte_Array) is
@@ -151,7 +184,8 @@ package body Steppers is
 
             if Error /= DMA_No_Error then
                Output := (others => 255);
-               --  Put a known bad message on the output to indicate an error.
+            --  Put a known bad message on the output to indicate an error.
+
             end if;
          end;
 
