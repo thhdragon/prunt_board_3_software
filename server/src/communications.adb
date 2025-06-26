@@ -421,9 +421,9 @@ package body Communications is
 
                   Log ("Firmware version " & Received_Message.Content.Version'Image & ".");
 
-                  exit when Received_Message.Content.Version = 4 and not Force_Firmware_Update;
+                  exit when Received_Message.Content.Version = 5 and not Force_Firmware_Update;
 
-                  Log ("Firmware version 4 required.");
+                  Log ("Firmware version 5 required.");
 
                   if Already_Tried_Update then
                      if Force_Firmware_Update then
