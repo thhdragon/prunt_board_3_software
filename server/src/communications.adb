@@ -313,6 +313,10 @@ package body Communications is
                Report_Heater_Power (H, Reply.Content.Heater_PWMs (H));
             end loop;
 
+            for H in Internal_Heater_Name loop
+               Report_Heater_Current (H, Reply.Content.Internal_Heaters_Currents (H));
+            end loop;
+
             for S in Input_Switch_Name loop
                Report_Input_Switch_State (S, Reply.Content.Switches (S));
             end loop;

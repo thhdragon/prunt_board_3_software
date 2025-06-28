@@ -96,6 +96,8 @@ procedure Prunt_Board_3_Server is
 
    procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
 
+   procedure Report_Heater_Current (Heater : Messages.Heater_Name; Curr : Fixed_Point_Internal_Heater_Current);
+
    procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
 
    procedure Report_Tachometer_Frequency (Fan : Messages.Fan_Name; Freq : Prunt.Frequency);
@@ -111,6 +113,7 @@ procedure Prunt_Board_3_Server is
         Report_Temperature          => Report_Temperature,
         Report_MCU_Temperature      => Report_MCU_Temperature,
         Report_Heater_Power         => Report_Heater_Power,
+        Report_Heater_Current       => Report_Heater_Current,
         Report_Input_Switch_State   => Report_Input_Switch_State,
         Report_Tachometer_Frequency => Report_Tachometer_Frequency,
         Prompt_For_Update           => Prompt_For_Update,
@@ -645,6 +648,11 @@ procedure Prunt_Board_3_Server is
    begin
       My_Controller.Report_Heater_Power (Heater, PWM_Scale (Power));
    end Report_Heater_Power;
+
+   procedure Report_Heater_Current (Heater : Messages.Heater_Name; Curr : Fixed_Point_Internal_Heater_Current) is
+   begin
+      My_Controller.Report_Heater_Current (Heater, Current (Curr));
+   end Report_Heater_Current;
 
    procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State) is
    begin
