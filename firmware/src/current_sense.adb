@@ -1,8 +1,9 @@
-with STM32.GPIO;   use STM32.GPIO;
-with STM32.Device; use STM32.Device;
-with STM32.ADC;    use STM32.ADC;
-with STM32.DMA;    use STM32.DMA;
-with HAL;          use HAL;
+with STM32.GPIO;    use STM32.GPIO;
+with STM32.Device;  use STM32.Device;
+with STM32.ADC;     use STM32.ADC;
+with STM32.DMA;     use STM32.DMA;
+with HAL;           use HAL;
+with Ada.Real_Time; use Ada.Real_Time;
 with Thermistors;
 with Last_Chance_Handler;
 
@@ -11,6 +12,9 @@ package body Current_Sense is
    procedure Init is
    begin
       ADC_Handler.Init;
+
+      delay until Clock + Milliseconds (300);
+      --  Wait until offsets are set.
    end Init;
 
    function Last_Reported_Current (Heater : Internal_Heater_Name) return Current is
@@ -126,7 +130,17 @@ package body Current_Sense is
                Start_Conversion (Internal_Heater_CS_ADC);
 
                Last_Currents (Current_Heater) :=
-                 (Dimensionless (Accumulator) / Dimensionless (Accumulator_Type'Last) - 0.5) * (3300.0 / 90.0 * amp);
+                 (Dimensionless (Accumulator) / Dimensionless (Accumulator_Type'Last) - 0.5)
+                 * (3300.0 / 90.0 * amp)
+                 - Offsets (Current_Heater);
+
+               if not First_Run_Done then
+                  Offsets (Current_Heater) := Last_Currents (Current_Heater);
+                  Last_Currents (Current_Heater) := 0.0 * amp;
+                  if Next_Heater = Internal_Heater_Name'First then
+                     First_Run_Done := True;
+                  end if;
+               end if;
 
                Current_Heater := Next_Heater;
                Accumulator := 0;

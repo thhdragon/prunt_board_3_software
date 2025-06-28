@@ -32,6 +32,8 @@ private
       Accumulator    : Accumulator_Type := 0;
       Step           : Accumulator_Step := Accumulator_Step'First;
       Current_Heater : Internal_Heater_Name := Internal_Heater_Name'First;
+      First_Run_Done : Boolean := False;
+      Offsets        : Float_Reported_Currents := (others => 0.0 * amp);
 
       procedure Start_Transfer;
       procedure End_Of_Sequence_Handler
