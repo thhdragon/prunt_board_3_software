@@ -5,6 +5,7 @@
     <install mode='copy'>
       <fileset dir=".">
         <include name="prunt_board_3_firmware_with_crc.bin"/>
+        <include name="images/*"/>
       </fileset>
     </install>
   </resource>

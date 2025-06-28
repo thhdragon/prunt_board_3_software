@@ -34,6 +34,7 @@ with Prunt.TMC_Types.TMC2240;
 with Ada.Containers.Generic_Constrained_Array_Sort;
 with System.Multiprocessors;
 with Ada.Strings.Unbounded;
+with Embedded_Resources;
 
 use type Prunt.TMC_Types.TMC2240.UART_Node_Address;
 
@@ -488,6 +489,102 @@ procedure Prunt_Board_3_Server is
       My_Communications.Runner.Init (False);
    end Reset;
 
+   function Get_Board_Specific_Documentation (Key : String) return String is
+      Stepper_Text    : constant String :=
+        "<p>Note that the pinout of this connector does not match the pinout of the connector on many other "
+        & "boards, refer to the below image. No damage will occur to the board or motor if the motor is not "
+        & "connected correctly, but the motor will not function. Switch off power to the board before plugging "
+        & "in or unplugging the motor.</p>";
+      Endstop_Text    : constant String :=
+        "<p>There is a 1A shared current limit between the 4 endstop inputs. Input pins are connected to the power "
+        & "pins via 6.6kohm resistors. Voltages above 5V should not be applied to the input or 5V pins as this "
+        & "will increase the voltage to all other endstop pins, the board will not be damaged by this but other "
+        & "endstops may be if they are not designed to handle this.</p><p>Note that the pinout of endstop connectors "
+        & "varies between different board vendors, refer to the below image and check that your endstops are "
+        & "correctly wired for this pinout.</p>";
+      Heater_Text     : constant String :=
+        "<p>This heater uses low-side switching at 1kHz and has fast over-current protection which triggers at 15A. "
+        & "If the over-current protection is triggered then the heater output will not turn back on until power to "
+        & "the board has been switched off for 30 seconds.</p>";
+      Thermistor_Text : constant String :=
+        "<p>This thermistor uses a 2000 ohm pull-up to 3.3V. Most common thermistors, including PT-1000s, may be "
+        & "connected directly as this board contains extra circuitry to allow for lower noise readings than other "
+        & "boards.</p>";
+      Fan_Text        : constant String :=
+        "<p>The high side switch on this fan is capable of driving a 2A load at up to 100Hz. The high side switch is "
+        & "on by default before the board setup runs or when low side switching is selected, this allows it to be "
+        & "used as the power pin when using low side switching.<p></p>The low side switch is capable of driving a "
+        & "500mA load at up to 25kHz. This switch may be used for fans that require a high PWM frequency or it "
+        & "may be used to drive the PWM pin of a 4 wire fan.<p></p>The tachometer has a 4700 ohm pull-up resistor to "
+        & "5V and can tolerate higher voltages so it can be directly connected to the tachometer output of most "
+        & "fans. The maximum tachometer input rate is limited by hardware to approximately 1kHz. The tachometer "
+        & "should not be used if the low side switch is being used to drive the ground pin of a fan rather than "
+        & "the PWM pin as this may cause damage to the fan.</p>";
+
+      function Image (Path : String) return String is
+      begin
+         return "<p><image src=""extras/images/" & Path & """ style=""max-width: 600px; width:100%;""></p>";
+      end Image;
+   begin
+      if Key = "Steppers$STEPPER_1" then
+         return Stepper_Text & Image ("stepper_1.png");
+      elsif Key = "Steppers$STEPPER_2" then
+         return Stepper_Text & Image ("stepper_2.png");
+      elsif Key = "Steppers$STEPPER_3" then
+         return Stepper_Text & Image ("stepper_3.png");
+      elsif Key = "Steppers$STEPPER_4" then
+         return Stepper_Text & Image ("stepper_4.png");
+      elsif Key = "Steppers$STEPPER_5" then
+         return Stepper_Text & Image ("stepper_5.png");
+      elsif Key = "Steppers$STEPPER_6" then
+         return Stepper_Text & Image ("stepper_6.png");
+      elsif Key = "Input switches$ENDSTOP_1" then
+         return Endstop_Text & Image ("endstop_1.png");
+      elsif Key = "Input switches$ENDSTOP_2" then
+         return Endstop_Text & Image ("endstop_2.png");
+      elsif Key = "Input switches$ENDSTOP_3" then
+         return Endstop_Text & Image ("endstop_3.png");
+      elsif Key = "Input switches$ENDSTOP_4" then
+         return Endstop_Text & Image ("endstop_4.png");
+      elsif Key = "Heaters$HEATER_1" then
+         return Heater_Text & Image ("heater_1.png");
+      elsif Key = "Heaters$HEATER_2" then
+         return Heater_Text & Image ("heater_2.png");
+      elsif Key = "Heaters$HEATER_3" then
+         return
+           "<p>This heater is designed for controlling an external solid state relay. It outputs a 0V to 5V 1kHz PWM "
+           & "signal through a 500 ohm resistor.</p>"
+           & Image ("heater_3.png");
+      elsif Key = "Thermistors$THERMISTOR_1" then
+         return Thermistor_Text & Image ("thermistor_1.png");
+      elsif Key = "Thermistors$THERMISTOR_2" then
+         return Thermistor_Text & Image ("thermistor_2.png");
+      elsif Key = "Thermistors$THERMISTOR_3" then
+         return Thermistor_Text & Image ("thermistor_3.png");
+      elsif Key = "Thermistors$THERMISTOR_4" then
+         return Thermistor_Text & Image ("thermistor_4.png");
+      elsif Key = "Fans" then
+         return
+           "<p>A 1000 ohm pull-up resistor to 5V may be enabled for the low side driver of each fan by installing a "
+           & "1.27mm in the vertical position on the header. This is useful for fans with a PWM pin which do not "
+           & "contain an internal pull-up, but it should not be used otherwise to avoid damage to fans.<p></p>The "
+           & "jumpers have no effect when in the horizontal position and may be stored in this position when they "
+           & "are not in use.<p></p>The order of the 4 pairs of vertical pins is the same as the order of the fan "
+           & "connectors, with fan 1 being on the left and fan 4 being on the right.</p>"
+           & Image ("fan_pull_ups.png");
+      elsif Key = "Fans$FAN_1" then
+         return Fan_Text & Image ("fan_1.png");
+      elsif Key = "Fans$FAN_2" then
+         return Fan_Text & Image ("fan_2.png");
+      elsif Key = "Fans$FAN_3" then
+         return Fan_Text & Image ("fan_3.png");
+      elsif Key = "Fans$FAN_4" then
+         return Fan_Text & Image ("fan_4.png");
+      else
+         return "";
+      end if;
+   end Get_Board_Specific_Documentation;
+
    Stepper_UART_Address : constant array (Stepper_Name) of Prunt.TMC_Types.TMC2240.UART_Node_Address :=
      (Stepper_1 => 6, Stepper_2 => 4, Stepper_3 => 3, Stepper_4 => 2, Stepper_5 => 5, Stepper_6 => 1);
 
@@ -496,33 +593,35 @@ procedure Prunt_Board_3_Server is
 
    package My_Controller is new
      Prunt.Controller
-       (Generic_Types              => My_Controller_Generic_Types,
-        Stepper_Hardware           =>
+       (Generic_Types                    => My_Controller_Generic_Types,
+        Stepper_Hardware                 =>
           (for S in Messages.Stepper_Name
            => (Kind                 => TMC2240_UART_Kind,
             Double_Edge_Stepping => True,
             TMC2240_UART_Address => Stepper_UART_Address (S),
             TMC2240_UART_Write   => TMC_Write'Access,
             TMC2240_UART_Read    => TMC_Read'Access)),
-        Fan_Hardware               =>
+        Fan_Hardware                     =>
           (for F in Messages.Fan_Name
            => (Kind                                       => Low_Or_High_Side_Switching_Kind,
             Reconfigure_Low_Or_High_Side_Switching_Fan => Reconfigure_Fan'Access,
             Maximum_Low_Side_PWM_Frequency             => Fan_Maximum_Low_Side_Frequency,
             Maximum_High_Side_PWM_Frequency            => Fan_Maximum_High_Side_Frequency)),
-        Interpolation_Time         => 60_000.0 / 1_200_000_000.0 * s,
-        Loop_Interpolation_Time    => 60_000.0 / 1_200_000_000.0 * s,
-        Setup                      => Setup,
-        Reconfigure_Heater         => Reconfigure_Heater,
-        Autotune_Heater            => Autotune_Heater,
-        Setup_For_Loop_Move        => Setup_For_Loop_Move,
-        Setup_For_Conditional_Move => Setup_For_Conditional_Move,
-        Enqueue_Command            => Enqueue_Command,
-        Reset_Position             => Reset_Position,
-        Wait_Until_Idle            => Wait_Until_Idle,
-        Reset                      => Reset,
-        Config_Path                => "./prunt_board_3.json",
-        Update_Check               =>
+        Interpolation_Time               => 60_000.0 / 1_200_000_000.0 * s,
+        Loop_Interpolation_Time          => 60_000.0 / 1_200_000_000.0 * s,
+        Setup                            => Setup,
+        Reconfigure_Heater               => Reconfigure_Heater,
+        Autotune_Heater                  => Autotune_Heater,
+        Setup_For_Loop_Move              => Setup_For_Loop_Move,
+        Setup_For_Conditional_Move       => Setup_For_Conditional_Move,
+        Enqueue_Command                  => Enqueue_Command,
+        Reset_Position                   => Reset_Position,
+        Wait_Until_Idle                  => Wait_Until_Idle,
+        Reset                            => Reset,
+        Config_Path                      => "./prunt_board_3.json",
+        Get_Extra_HTTP_Content           => Embedded_Resources.Get_Content,
+        Get_Board_Specific_Documentation => Get_Board_Specific_Documentation,
+        Update_Check                     =>
           (Method       => Github,
            Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_3_software"),
            Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.0.0")));
@@ -572,10 +671,8 @@ begin
         with "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path> [--reboot-to-kalico]";
    end if;
 
-   My_Communications.Runner.Open_Port
-     (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
-   My_Communications.Runner.Init
-     (Argument_Value ("--force-firmware-update=", "") = "do-not-use-this-argument");
+   My_Communications.Runner.Open_Port (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
+   My_Communications.Runner.Init (Argument_Value ("--force-firmware-update=", "") = "do-not-use-this-argument");
 
    for Arg in 1 .. Argument_Count loop
       if Argument (Arg) = "--reboot-to-kalico" then
