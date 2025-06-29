@@ -88,7 +88,7 @@ procedure Prunt_Board_3_Server is
       return (for I in Stepper_Name => Dimensionless'Rounding (Left (I)));
    end Rounding;
 
-   procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence);
+   procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence; Is_Fatal : Boolean := True);
 
    procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celsius);
 
@@ -463,9 +463,7 @@ procedure Prunt_Board_3_Server is
          TMC_Reply);
 
       Receive_Failed := TMC_Reply (1) /= 2#00000101#;
-      if Receive_Failed then
-         raise Constraint_Error with TMC_Reply (1)'Image;
-      end if;
+
       Reply := (for I in Reply'Range => Prunt.TMC_Types.TMC2240.UART_Byte (TMC_Reply (9 - I)));
    end TMC_Read;
 
@@ -629,9 +627,9 @@ procedure Prunt_Board_3_Server is
            Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_3_software"),
            Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.0.0")));
 
-   procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence) is
+   procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence; Is_Fatal : Boolean := True) is
    begin
-      My_Controller.Report_External_Error (Occurrence);
+      My_Controller.Report_External_Error (Occurrence, Is_Fatal);
    end Report_Error;
 
    procedure Report_Temperature (Thermistor : Messages.Thermistor_Name; Temp : Fixed_Point_Celsius) is

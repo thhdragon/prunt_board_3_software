@@ -127,7 +127,7 @@ package body Server_Communication is
 
       Set_TX_Message_Kind (Hello_Kind);
       TX_Message.Content.Index := Last_Message_Index;
-      TX_Message.Content.Version := 5;
+      TX_Message.Content.Version := 6;
       TX_Message.Content.Client_Message_Length := Message_From_Client'Value_Size / 4;
       TX_Message.Content.Server_Message_Length := Message_From_Server'Value_Size / 8;
       TX_Message.Content.ID :=
@@ -511,7 +511,7 @@ package body Server_Communication is
       Transmit (Comms_UART, 254);
    end Transmit_TX_Message;
 
-   procedure Transmit_Fatal_Exception_Mark is
+   procedure Transmit_Fatal_Exception_Start_Mark is
    begin
       Init_Checker.Raise_If_Init_Not_Done;
 
@@ -520,7 +520,19 @@ package body Server_Communication is
       end loop;
 
       Transmit (Comms_UART, 253);
-   end Transmit_Fatal_Exception_Mark;
+   end Transmit_Fatal_Exception_Start_Mark;
+
+
+   procedure Transmit_Fatal_Exception_End_Mark is
+   begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
+      loop
+         exit when Tx_Ready (Comms_UART);
+      end loop;
+
+      Transmit (Comms_UART, 252);
+   end Transmit_Fatal_Exception_End_Mark;
 
    procedure Transmit_String (S : String) is
    begin

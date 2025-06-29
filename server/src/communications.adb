@@ -7,6 +7,8 @@ with Ada.Real_Time; use Ada.Real_Time;
 
 package body Communications is
 
+   MCU_Error : exception;
+
    protected body TMC_IO is
       procedure Read (Message : TMC2240_UART_Query_Byte_Array; Reply : out TMC2240_UART_Data_Byte_Array) is
       begin
@@ -67,6 +69,14 @@ package body Communications is
             Set_Bounded_String (MCU_Log_Buffer, "");
          end if;
       end Flush_MCU_Log_Buffer;
+
+      procedure Raise_MCU_Log_Buffer_Error is
+         use MCU_Log_Buffer_Strings;
+         Str : constant String := To_String (MCU_Log_Buffer);
+      begin
+         Set_Bounded_String (MCU_Log_Buffer, "");
+         raise MCU_Error with Str;
+      end Raise_MCU_Log_Buffer_Error;
 
       procedure Log_MCU_Character (C : Character) is
          use MCU_Log_Buffer_Strings;
@@ -132,7 +142,9 @@ package body Communications is
             begin
                for I in Last_Last + 1 .. Last loop
                   if Received (I) = 253 then
-                     raise Constraint_Error with "Got exception from MCU. Details logged to console. (2)";
+                     Flush_MCU_Log_Buffer;
+                  elsif Received (I) = 252 then
+                     Raise_MCU_Log_Buffer_Error;
                   elsif Received (I) = 254 then
                      Message_Nibbles (Integer (I - Bytes_Consumed) .. Message_Nibbles'Last) := (others => 0);
                      if Message.Content.Kind'Valid
@@ -357,6 +369,21 @@ package body Communications is
       end Send_And_Handle_Reply;
 
    begin
+      accept Open_Port (Port_Name : GNAT.Serial_Communications.Port_Name) do
+         GNAT.Serial_Communications.Open (Port, Port_Name);
+         GNAT.Serial_Communications.Set
+           (Port      => Port,
+            Rate      => GNAT.Serial_Communications.B75,
+            Bits      => GNAT.Serial_Communications.CS8,
+            Stop_Bits => GNAT.Serial_Communications.One,
+            Parity    => GNAT.Serial_Communications.None,
+            Block     => False,
+            Local     => True,
+            Flow      => GNAT.Serial_Communications.None,
+            Timeout   => 10.0);
+      --  Requesting a baud rate of 75 actually sets the board to 6M.
+      end Open_Port;
+
       <<Restart_Point>>
 
       Last_Received_Index := Message_Index'First;
@@ -365,143 +392,167 @@ package body Communications is
       Last_Reported_Tach_Counters := (others => 0);
 
       begin
-         accept Open_Port (Port_Name : GNAT.Serial_Communications.Port_Name) do
-            GNAT.Serial_Communications.Open (Port, Port_Name);
-            GNAT.Serial_Communications.Set
-              (Port      => Port,
-               Rate      => GNAT.Serial_Communications.B75,
-               Bits      => GNAT.Serial_Communications.CS8,
-               Stop_Bits => GNAT.Serial_Communications.One,
-               Parity    => GNAT.Serial_Communications.None,
-               Block     => False,
-               Local     => True,
-               Flow      => GNAT.Serial_Communications.None,
-               Timeout   => 10.0);
-         --  Requesting a baud rate of 75 actually sets the board to 6M.
-         end Open_Port;
-
-         accept Init (Force_Firmware_Update : Boolean) do
-            loop
-               declare
-                  Byte       : Stream_Element_Array (1 .. 1);
-                  Bytes_Read : Stream_Element_Offset;
-               begin
+         loop
+            select
+               accept Restart;
+            or
+               --  Ignore messages in case an error happened during setup.
+               accept Send_Message (Content : Message_From_Server_Content) do
+                  null;
+               end Send_Message;
+            or
+               accept Send_Message_And_Wait_For_Reply
+                 (Content : Message_From_Server_Content; Reply : out Message_From_Client_Content)
+               do
+                  null;
+               end Send_Message_And_Wait_For_Reply;
+            or
+               accept Init (Force_Firmware_Update : Boolean) do
                   loop
-                     loop
-                        GNAT.Serial_Communications.Read (Port, Byte, Bytes_Read);
-                        exit when Bytes_Read = 1;
-                     end loop;
-                     exit when Byte (1) = 254;
-                     --  We don't raise an exception when we see an MCU exception here as it is very likely to just be
-                     --  a timeout from a previous session which is still stuck in the buffer.
-                     if Byte (1) < 128 then
-                        Log_MCU_Character (Character'Val (Byte (1)));
-                     end if;
-                  end loop;
-
-                  Flush_MCU_Log_Buffer;
-               end;
-
-               declare
-                  Received_Message : aliased Message_From_Client;
-
-                  Received_Checksum_Good : Boolean;
-               begin
-                  loop
-                     Get_Reply (Received_Message, Received_Checksum_Good);
-                     exit when Received_Checksum_Good;
-                  end loop;
-
-                  if Received_Message.Content.ID
-                    /= DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE
-                  then
-                     raise Constraint_Error with "The connected board does not appear to be a Prunt Board 3.";
-                  end if;
-
-                  if Received_Message.Content.Kind /= Hello_Kind then
-                     raise Constraint_Error
-                       with "Expected hello message from MCU but got " & Received_Message.Content.Kind'Image;
-                  end if;
-
-                  Log ("Firmware version " & Received_Message.Content.Version'Image & ".");
-
-                  exit when Received_Message.Content.Version = 5 and not Force_Firmware_Update;
-
-                  Log ("Firmware version 5 required.");
-
-                  if Already_Tried_Update then
-                     if Force_Firmware_Update then
+                     declare
+                        Byte       : Stream_Element_Array (1 .. 1);
+                        Bytes_Read : Stream_Element_Offset;
+                     begin
                         loop
-                           Log
-                             ("The force-firmware-update argument is only intended to be used during development as "
-                              & "firmware updates cause irreversible wear to the MCU flash. The firmware has been "
-                              & "flashed, but Prunt will not run until the argument is removed.");
-                           delay 5.0;
+                           loop
+                              GNAT.Serial_Communications.Read (Port, Byte, Bytes_Read);
+                              exit when Bytes_Read = 1;
+                           end loop;
+                           exit when Byte (1) = 254;
+                           --  We don't raise an exception when we see an MCU exception here as it is very likely to just
+                           --  be a timeout from a previous session which is still stuck in the buffer.
+                           if Byte (1) < 128 then
+                              Log_MCU_Character (Character'Val (Byte (1)));
+                           end if;
                         end loop;
-                     else
-                        raise Constraint_Error with "Board firmware update failed.";
-                     end if;
-                  else
-                     Already_Tried_Update := True;
-                     Prompt_For_Update;
+
+                        Flush_MCU_Log_Buffer;
+                     end;
 
                      declare
-                        Bytes_To_Send   : constant Stream_Element_Offset :=
-                          Stream_Element_Offset (Received_Message.Content.Server_Message_Length);
-                        Message_To_Send : aliased Message_From_Server;
-                        Firmware        : constant access constant Stream_Element_Array :=
-                          Embedded_Resources.Get_Content ("prunt_board_3_firmware_with_crc.bin");
-                        Final_Offset    : constant Firmware_Data_Offset :=
-                          Firmware_Data_Offset
-                            ((Firmware.all'Length + Firmware_Data_Array'Length - 1) / Firmware_Data_Array'Length);
+                        Received_Message : aliased Message_From_Client;
+
+                        Received_Checksum_Good : Boolean;
                      begin
-                        if Bytes_To_Send < 1_048 then
-                           raise Constraint_Error with "Server message size too small to send firmware updates.";
-                        end if;
-
-                        Log ("Starting firmware update.");
-                        Message_To_Send.Content :=
-                          (Kind  => Firmware_Update_Start_Kind,
-                           Index => 0,
-                           ID    =>
-                             DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE);
-                        Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
-
-                        for I in 0 .. Final_Offset loop
-                           Log
-                             ("Sending update part "
-                              & Positive (I + 1)'Image
-                              & " of "
-                              & Positive (Final_Offset + 1)'Image
-                              & ".");
-                           Message_To_Send.Content :=
-                             (Kind            => Firmware_Update_Data_Kind,
-                              Index           => 0,
-                              Firmware_Offset => I,
-                              Firmware_Data   => (others => 16#FF#));
-                           for J in Stream_Element_Offset range 0 .. Firmware_Data_Array'Length - 1 loop
-                              declare
-                                 Byte_Index : constant Stream_Element_Offset :=
-                                   Stream_Element_Offset (I) * Firmware_Data_Array'Length + J + Firmware.all'First;
-                              begin
-                                 if Byte_Index in Firmware.all'Range then
-                                    Message_To_Send.Content.Firmware_Data (Integer (J + 1)) :=
-                                      Firmware_Byte (Firmware.all (Byte_Index));
-                                 end if;
-                              end;
-                           end loop;
-                           Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
+                        loop
+                           Get_Reply (Received_Message, Received_Checksum_Good);
+                           exit when Received_Checksum_Good;
                         end loop;
 
-                        Log ("Ending firmware update.");
-                        Message_To_Send.Content := (Kind => Firmware_Update_Done_Kind, Index => 0);
-                        Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
+                        if Received_Message.Content.ID
+                          /= DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE
+                        then
+                           raise Constraint_Error with "The connected board does not appear to be a Prunt Board 3.";
+                        end if;
+
+                        if Received_Message.Content.Kind /= Hello_Kind then
+                           raise Constraint_Error
+                             with "Expected hello message from MCU but got " & Received_Message.Content.Kind'Image;
+                        end if;
+
+                        Log ("Firmware version " & Received_Message.Content.Version'Image & ".");
+
+                        exit when Received_Message.Content.Version = 6 and not Force_Firmware_Update;
+
+                        Log ("Firmware version 6 required.");
+
+                        if Already_Tried_Update then
+                           if Force_Firmware_Update then
+                              loop
+                                 Log
+                                   ("The force-firmware-update argument is only intended to be used during development as "
+                                    & "firmware updates cause irreversible wear to the MCU flash. The firmware has been "
+                                    & "flashed, but Prunt will not run until the argument is removed.");
+                                 delay 5.0;
+                              end loop;
+                           else
+                              raise Constraint_Error with "Board firmware update failed.";
+                           end if;
+                        else
+                           Already_Tried_Update := True;
+                           Prompt_For_Update;
+
+                           declare
+                              Bytes_To_Send   : constant Stream_Element_Offset :=
+                                Stream_Element_Offset (Received_Message.Content.Server_Message_Length);
+                              Message_To_Send : aliased Message_From_Server;
+                              Firmware        : constant access constant Stream_Element_Array :=
+                                Embedded_Resources.Get_Content ("prunt_board_3_firmware_with_crc.bin");
+                              Final_Offset    : constant Firmware_Data_Offset :=
+                                Firmware_Data_Offset
+                                  ((Firmware.all'Length + Firmware_Data_Array'Length - 1)
+                                   / Firmware_Data_Array'Length);
+                           begin
+                              if Bytes_To_Send < 1_048 then
+                                 raise Constraint_Error with "Server message size too small to send firmware updates.";
+                              end if;
+
+                              Log ("Starting firmware update.");
+                              Message_To_Send.Content :=
+                                (Kind  => Firmware_Update_Start_Kind,
+                                 Index => 0,
+                                 ID    =>
+                                   DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE);
+                              Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
+
+                              for I in 0 .. Final_Offset loop
+                                 Log
+                                   ("Sending update part "
+                                    & Positive (I + 1)'Image
+                                    & " of "
+                                    & Positive (Final_Offset + 1)'Image
+                                    & ".");
+                                 Message_To_Send.Content :=
+                                   (Kind            => Firmware_Update_Data_Kind,
+                                    Index           => 0,
+                                    Firmware_Offset => I,
+                                    Firmware_Data   => (others => 16#FF#));
+                                 for J in Stream_Element_Offset range 0 .. Firmware_Data_Array'Length - 1 loop
+                                    declare
+                                       Byte_Index : constant Stream_Element_Offset :=
+                                         Stream_Element_Offset (I)
+                                         * Firmware_Data_Array'Length
+                                         + J
+                                         + Firmware.all'First;
+                                    begin
+                                       if Byte_Index in Firmware.all'Range then
+                                          Message_To_Send.Content.Firmware_Data (Integer (J + 1)) :=
+                                            Firmware_Byte (Firmware.all (Byte_Index));
+                                       end if;
+                                    end;
+                                 end loop;
+                                 Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
+                              end loop;
+
+                              Log ("Ending firmware update.");
+                              Message_To_Send.Content := (Kind => Firmware_Update_Done_Kind, Index => 0);
+                              Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
+                           end;
+                        end if;
                      end;
-                  end if;
-               end;
-            end loop;
-         end Init;
+                  end loop;
+
+                  TMC_Write_Waiting := False;
+                  TMC_Reply_Waiting := False;
+                  TMC_Query_Waiting := False;
+               end Init;
+               exit;
+            or
+               --  If a reset happens during TMC writes then we need to clear them out.
+               delay 0.01;
+               TMC_Reply := (others => 0);
+               TMC_Reply_Waiting := True;
+               TMC_Write_Waiting := False;
+               TMC_Query_Waiting := False;
+            end select;
+         end loop;
       exception
+         when E : UART_Timeout_Error =>
+            Report_Error (E, Is_Fatal => False);
+            goto Restart_Point;
+         when E : MCU_Error =>
+            Report_Error (E, Is_Fatal => False);
+            goto Restart_Point;
          when E : others =>
             Flush_MCU_Log_Buffer;
             Report_Error (E);
@@ -541,11 +592,11 @@ package body Communications is
             end select;
          exception
             when E : UART_Timeout_Error =>
-               if Message_To_Send.Content.Kind /= Kalico_Reboot_Kind then
-                  --  TODO: Get a reply here before restarting instead of just waiting for a timeout.
-                  Report_Error (E);
-               end if;
-               raise;
+               Report_Error (E, Is_Fatal => False);
+               goto Restart_Point;
+            when E : MCU_Error =>
+               Report_Error (E, Is_Fatal => False);
+               goto Restart_Point;
             when E : others =>
                Report_Error (E);
                raise;

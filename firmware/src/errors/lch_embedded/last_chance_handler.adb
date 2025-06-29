@@ -48,12 +48,12 @@ package body Last_Chance_Handler is
 
       if Server_Communication.Is_Init_Done then
          Server_Communication.Transmit_String_Line ("");
-         Server_Communication.Transmit_String_Line ("Fatal exception on MCU:");
+         Server_Communication.Transmit_Fatal_Exception_Start_Mark;
          Server_Communication.Transmit_String_Line (Exception_Information (Except));
+         Server_Communication.Transmit_Fatal_Exception_End_Mark;
          Server_Communication.Transmit_String_Line ("Compilation date: " & GNAT.Source_Info.Compilation_ISO_Date);
          Server_Communication.Transmit_String_Line ("Compilation time: " & GNAT.Source_Info.Compilation_Time);
          Server_Communication.Transmit_String_Line ("Restarting.");
-         Server_Communication.Transmit_Fatal_Exception_Mark;
          Server_Communication.Transmit_String_Line (".....");
          Server_Communication.Transmit_String_Line (".....");
          Server_Communication.Transmit_String_Line (".....");

@@ -5,7 +5,7 @@ with System.Multiprocessors;
 with Prunt;
 
 generic
-   with procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence);
+   with procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence; Is_Fatal : Boolean := True);
    with procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celsius);
    with procedure Report_MCU_Temperature (Temp : Fixed_Point_Celsius);
    with procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
@@ -50,7 +50,7 @@ private
    TMC_Reply         : TMC2240_UART_Data_Byte_Array with
      Volatile;
    TMC_Reply_Waiting : Boolean := False with
-     Volatile, Atomic;
+       Volatile, Atomic;
 
    --  We avoid using a protected object for the above as the Runner task accesses them and it is crucial that the
    --  Runner task never blocks on anything other than waiting for a message or reply to maximise reliability.

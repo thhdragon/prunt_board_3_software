@@ -8,7 +8,8 @@ package Server_Communication is
    procedure Run;
    procedure Transmit_String (S : String);
    procedure Transmit_String_Line (S : String);
-   procedure Transmit_Fatal_Exception_Mark;
+   procedure Transmit_Fatal_Exception_Start_Mark;
+   procedure Transmit_Fatal_Exception_End_Mark;
    function Is_Init_Done return Boolean;
 
    DMA_Error     : exception;
