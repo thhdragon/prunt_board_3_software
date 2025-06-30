@@ -19,10 +19,10 @@
 --                                                                         --
 -----------------------------------------------------------------------------
 
-with Prunt;             use Prunt;
-with Messages;          use Messages;
-with Ada.Command_Line;  use Ada.Command_Line;
-with Prunt.Thermistors; use Prunt.Thermistors;
+with Prunt;                use Prunt;
+with Messages;             use Messages;
+with Ada.Command_Line;     use Ada.Command_Line;
+with Prunt.Thermistors;    use Prunt.Thermistors;
 with Prunt.Controller;
 with Ada.Text_IO;
 with Ada.Exceptions;
@@ -35,10 +35,123 @@ with Ada.Containers.Generic_Constrained_Array_Sort;
 with System.Multiprocessors;
 with Ada.Strings.Unbounded;
 with Embedded_Resources;
+with Interfaces.C.Strings; use Interfaces.C.Strings;
+with Interfaces.C;         use Interfaces.C;
+with Udev;                 use Udev;
 
 use type Prunt.TMC_Types.TMC2240.UART_Node_Address;
 
 procedure Prunt_Board_3_Server is
+   C_String_usb          : chars_ptr := New_String ("usb");
+   C_String_usb_device   : chars_ptr := New_String ("usb_device");
+   C_String_tty          : chars_ptr := New_String ("tty");
+   C_String_idVendor     : chars_ptr := New_String ("idVendor");
+   C_String_idProduct    : chars_ptr := New_String ("idProduct");
+   C_String_manufacturer : chars_ptr := New_String ("manufacturer");
+   C_String_product      : chars_ptr := New_String ("product");
+   C_String_serial       : chars_ptr := New_String ("serial");
+
+   procedure Log (Message : String);
+
+   function Find_Port_Name return String is
+      My_Udev : access Udev.Udev := Udev_New;
+   begin
+      if My_Udev = null then
+         raise Constraint_Error;
+      end if;
+
+      declare
+         My_Enumerate : access Udev_Enumerate := Udev_Enumerate_New (My_Udev);
+      begin
+         if My_Enumerate = null then
+            raise Constraint_Error;
+         end if;
+
+         if Udev_Enumerate_Add_Match_Subsystem (My_Enumerate, C_String_tty) < 0 then
+            raise Constraint_Error;
+         end if;
+         if Udev_Enumerate_Scan_Devices (My_Enumerate) < 0 then
+            raise Constraint_Error;
+         end if;
+
+         declare
+            Device_Entry : access Udev_List_Entry := Udev_Enumerate_Get_List_Entry (My_Enumerate);
+         begin
+            while Device_Entry /= null loop
+               declare
+                  Path : chars_ptr := Udev_List_Entry_Get_Name (Device_Entry);
+               begin
+                  if Path = Null_Ptr then
+                     raise Constraint_Error;
+                  end if;
+                  declare
+                     TTY_Device : access Udev_Device := Udev_Device_New_From_Syspath (My_Udev, Path);
+                  begin
+                     if TTY_Device = null then
+                        raise Constraint_Error;
+                     end if;
+                     declare
+                        USB_Device : constant access Udev_Device :=
+                          Udev_Device_Get_Parent_With_Subsystem_Devtype
+                            (TTY_Device, C_String_usb, C_String_usb_device);
+                     begin
+                        if USB_Device /= null then
+                           declare
+                              VID          : constant chars_ptr :=
+                                Udev_Device_Get_Sysattr_Value (USB_Device, C_String_idVendor);
+                              PID          : constant chars_ptr :=
+                                Udev_Device_Get_Sysattr_Value (USB_Device, C_String_idProduct);
+                              Manufacturer : constant chars_ptr :=
+                                Udev_Device_Get_Sysattr_Value (USB_Device, C_String_manufacturer);
+                              Product      : constant chars_ptr :=
+                                Udev_Device_Get_Sysattr_Value (USB_Device, C_String_product);
+                              Serial       : constant chars_ptr :=
+                                Udev_Device_Get_Sysattr_Value (USB_Device, C_String_serial);
+                           begin
+                              if String'(Value (VID)) = "0483"
+                                and then String'(Value (PID)) = "a4f6"
+                                and then String'(Value (Manufacturer)) = "Prunt 3D"
+                                and then String'(Value (Product)) = "Prunt Board 3"
+                              then
+                                 if Serial = Null_Ptr then
+                                    raise Constraint_Error with "Board serial number is missing.";
+                                 end if;
+
+                                 Log ("Board serial number: " & Value (Serial));
+
+                                 declare
+                                    Return_Value : constant String := Value (Path);
+                                    Split_Point  : Positive := Return_Value'First;
+                                 begin
+                                    for I in Return_Value'Range loop
+                                       if Return_Value (I) = '/' then
+                                          Split_Point := I + 1;
+                                       end if;
+                                    end loop;
+
+                                    TTY_Device := Udev_Device_Unref (TTY_Device);
+                                    My_Enumerate := Udev_Enumerate_Unref (My_Enumerate);
+                                    My_Udev := Udev_Unref (My_Udev);
+
+                                    return "/dev/" & Return_Value (Split_Point .. Return_Value'Last);
+                                 end;
+                              end if;
+                           end;
+                        end if;
+                     end;
+                     TTY_Device := Udev_Device_Unref (TTY_Device);
+                  end;
+               end;
+
+               Device_Entry := Udev_List_Entry_Get_Next (Device_Entry);
+            end loop;
+            My_Enumerate := Udev_Enumerate_Unref (My_Enumerate);
+         end;
+         My_Udev := Udev_Unref (My_Udev);
+         return "";
+      end;
+
+   end Find_Port_Name;
 
    Loop_Move_Multiplier : constant := 1024;
 
@@ -101,8 +214,6 @@ procedure Prunt_Board_3_Server is
    procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
 
    procedure Report_Tachometer_Frequency (Fan : Messages.Fan_Name; Freq : Prunt.Frequency);
-
-   procedure Log (Message : String);
 
    procedure Prompt_For_Update;
 
@@ -672,12 +783,21 @@ procedure Prunt_Board_3_Server is
       My_Controller.Log (Message);
    end Log;
 begin
-   if Argument_Value ("--serial-port=", "") = "" then
-      raise Constraint_Error
-        with "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path> [--reboot-to-kalico]";
-   end if;
+   loop
+      declare
+         Port_Name : constant String := Find_Port_Name;
+      begin
+         if Port_Name /= "" then
+            Log ("Prunt Board 3 found at " & Port_Name);
+            My_Communications.Runner.Open_Port (GNAT.Serial_Communications.Port_Name (Port_Name));
+            exit;
+         else
+            Log ("Prunt Board 3 not found. Retrying in 3 seconds.");
+            delay 3.0;
+         end if;
+      end;
+   end loop;
 
-   My_Communications.Runner.Open_Port (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
    My_Communications.Runner.Init (Argument_Value ("--force-firmware-update=", "") = "do-not-use-this-argument");
 
    for Arg in 1 .. Argument_Count loop

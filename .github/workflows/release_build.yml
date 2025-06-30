@@ -48,6 +48,7 @@ jobs:
         path: server/embedded_resources
 
     - run: >
+        sudo apt-get install -y libudev-dev &&
         cd server &&
         alr install are &&
         PATH=$PATH:$HOME/.alire/bin make -C embedded_resources &&
@@ -81,6 +82,7 @@ jobs:
         path: server/embedded_resources
 
     - run: >
+        sudo apt-get install -y libudev-dev &&
         cd server &&
         PATH=$PATH:$HOME/.alire/bin make -C embedded_resources &&
         alr build --release &&

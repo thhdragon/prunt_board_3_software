@@ -24,6 +24,10 @@ project Prunt_Board_3_Server is
       for Switches ("Ada") use ("-Es", "-static");
    end Binder;
 
+   package Linker is
+      for Switches ("Ada") use ("-ludev");
+   end Linker;
+
    package Install is
       for Artifacts (".") use ("share");
    end Install;
