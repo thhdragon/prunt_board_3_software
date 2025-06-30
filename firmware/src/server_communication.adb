@@ -127,7 +127,7 @@ package body Server_Communication is
 
       Set_TX_Message_Kind (Hello_Kind);
       TX_Message.Content.Index := Last_Message_Index;
-      TX_Message.Content.Version := 7;
+      TX_Message.Content.Version := 8;
       TX_Message.Content.Client_Message_Length := Message_From_Client'Value_Size / 4;
       TX_Message.Content.Server_Message_Length := Message_From_Server'Value_Size / 8;
       TX_Message.Content.ID :=
@@ -257,6 +257,9 @@ package body Server_Communication is
 
                case RX_Message.Content.Kind is
                   when Setup_Kind =>
+                     Current_Sense.Init;
+                     --  We leave this until setup so that board does not get stuck in a loop.
+
                      Heaters.Init;
                      Thermistors.Setup
                        (RX_Message.Content.Thermistor_Curves'Unrestricted_Access,

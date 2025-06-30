@@ -7,6 +7,8 @@ package Current_Sense is
    procedure Init;
    function Last_Reported_Current (Heater : Internal_Heater_Name) return Current;
 
+   Overcurrent_Error : exception;
+
 private
 
    type ADC_16 is mod 2**16 with Size => 16;
@@ -21,6 +23,9 @@ private
    type Accumulator_Step is range 1 .. 16;
    type Accumulator_Type is range 0 .. Integer (DMA_Index'Last) * Integer (Accumulator_Step'Last) * 2**16 - 1;
 
+   type OC_Trigger_Counter is range 0 .. 10;
+   type OC_Trigger_Counters is array (Internal_Heater_Name) of OC_Trigger_Counter;
+
    protected ADC_Handler
    with Interrupt_Priority => Internal_Heater_CS_DMA_Interrupt_Priority
    is
@@ -34,6 +39,7 @@ private
       Current_Heater : Internal_Heater_Name := Internal_Heater_Name'First;
       First_Run_Done : Boolean := False;
       Offsets        : Float_Reported_Currents := (others => 0.0 * amp);
+      OC_Triggers    : OC_Trigger_Counters := (others => OC_Trigger_Counter'First);
 
       procedure Start_Transfer;
       procedure End_Of_Sequence_Handler

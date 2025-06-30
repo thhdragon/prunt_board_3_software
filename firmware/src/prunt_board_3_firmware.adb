@@ -53,7 +53,6 @@ begin
 
    Thermistors.Init;
    MCU_Temperature.Init;
-   Current_Sense.Init;
 
    Server_Communication.Run;
 

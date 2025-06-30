@@ -1,3 +1,4 @@
+with HAL.GPIO;
 with STM32.GPIO;    use STM32.GPIO;
 with STM32.Device;  use STM32.Device;
 with STM32.ADC;     use STM32.ADC;
@@ -58,6 +59,7 @@ package body Current_Sense is
 
          for Heater in Internal_Heater_Name loop
             Configure_IO (Internal_Heater_CS_GPIO_Points (Heater), (Mode => Mode_Analog, Resistors => Floating));
+            Configure_IO (Internal_Heater_OC_GPIO_Points (Heater), (Mode => Mode_In, Resistors => Floating));
          end loop;
 
          Configure
@@ -106,6 +108,18 @@ package body Current_Sense is
 
          for Result of ADC_Results loop
             Accumulator := @ + Accumulator_Type (Result);
+         end loop;
+
+         for Heater in Internal_Heater_Name loop
+            if Set (Internal_Heater_OC_GPIO_Points (Heater)) then
+               OC_Triggers (Heater) := OC_Trigger_Counter'First;
+            else
+               OC_Triggers (Heater) := @ + 1;
+               if OC_Triggers (Heater) = OC_Trigger_Counter'Last then
+                  raise Overcurrent_Error
+                    with "OCP triggered on " & Heater'Image & ". Remove power for 30 seconds to clear.";
+               end if;
+            end if;
          end loop;
 
          if Step = Accumulator_Step'Last then
