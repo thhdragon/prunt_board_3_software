@@ -12,10 +12,6 @@ package body Communications is
    protected body TMC_IO is
       procedure Read (Message : TMC2240_UART_Query_Byte_Array; Reply : out TMC2240_UART_Data_Byte_Array) is
       begin
-         pragma Assert (not TMC_Query_Waiting);
-         pragma Assert (not TMC_Write_Waiting);
-         pragma Assert (not TMC_Reply_Waiting);
-
          TMC_Query := Message;
          TMC_Query_Waiting := True;
 
@@ -30,10 +26,6 @@ package body Communications is
 
       procedure Write (Message : TMC2240_UART_Data_Byte_Array) is
       begin
-         pragma Assert (not TMC_Query_Waiting);
-         pragma Assert (not TMC_Write_Waiting);
-         pragma Assert (not TMC_Reply_Waiting);
-
          TMC_Write := Message;
          TMC_Write_Waiting := True;
 
