@@ -120,8 +120,6 @@ jobs:
         files: |
           prunt_board_3_firmware_with_crc.bin/prunt_board_3_firmware_with_crc.bin
           prunt_board_3_server_linux_x64_release/prunt_board_3_server_linux_x64_release
-          # prunt_board_3_server_linux_x64_debug/prunt_board_3_server_linux_x64_debug
           prunt_board_3_server_linux_aarch64_release/prunt_board_3_server_linux_aarch64_release
-          # prunt_board_3_server_linux_aarch64_debug/prunt_board_3_server_linux_aarch64_debug
         fail_on_unmatched_files: true
         draft: true
