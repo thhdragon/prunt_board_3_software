@@ -736,7 +736,7 @@ procedure Prunt_Board_3_Server is
         Update_Check                     =>
           (Method       => Github,
            Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_3_software"),
-           Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.1.0")));
+           Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.2.0")));
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence; Is_Fatal : Boolean := True) is
    begin
@@ -802,7 +802,6 @@ begin
 
    for Arg in 1 .. Argument_Count loop
       if Argument (Arg) = "--reboot-to-kalico" then
-         raise Constraint_Error with "Klipper/Kalico support is not yet implemented.";
          My_Communications.Runner.Send_Message
            ((Kind           => Kalico_Reboot_Kind,
              Index          => <>,
