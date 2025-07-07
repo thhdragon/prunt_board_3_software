@@ -118,7 +118,6 @@ jobs:
     - uses: softprops/action-gh-release@01570a1f39cb168c169c802c3bceb9e93fb10974
       with:
         files: |
-          prunt_board_3_firmware_with_crc.bin/prunt_board_3_firmware_with_crc.bin
           prunt_board_3_server_linux_x64_release/prunt_board_3_server_linux_x64_release
           prunt_board_3_server_linux_aarch64_release/prunt_board_3_server_linux_aarch64_release
         fail_on_unmatched_files: true
