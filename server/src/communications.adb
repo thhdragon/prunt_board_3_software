@@ -575,7 +575,7 @@ package body Communications is
                goto Restart_Point;
             or
                when Last_Received_Index > Message_Index'First and In_Safe_Stop_State
-               =>delay 0.02;
+               =>delay 0.005;
                Message_To_Send.Content :=
                  (Kind => Status_Kind, Index => <>, TMC_Write_Data => (others => 0), TMC_Read_Data => (others => 0));
                Send_And_Handle_Reply (Message_To_Send, Received_Message);
