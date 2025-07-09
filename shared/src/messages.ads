@@ -59,12 +59,12 @@ package Messages is
 
    type Message_Index is mod 2**64 with Size => 64;
 
-   type Step_Count is range 0 .. 127 with Size => 7;
+   type Step_Count is range 0 .. 255 with Size => 8;
 
-   type Step_Delta_List_Index is range 1 .. 2_048 with Size => 16;
+   type Step_Delta_List_Index is range 1 .. 1_755 with Size => 16;
 
    type Step_Delta_Steps is array (Stepper_Name) of Step_Count
-   with Size => 7 * 6, Component_Size => 7, Scalar_Storage_Order => System.Low_Order_First;
+   with Size => 8 * 6, Component_Size => 8, Scalar_Storage_Order => System.Low_Order_First;
 
    type Direction is (Forward, Backward) with Size => 1;
 
@@ -77,16 +77,17 @@ package Messages is
       Dirs  : Step_Delta_Dirs;
       Steps : Step_Delta_Steps;
    end record
-   with Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 48;
+   with Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 56;
 
    for Step_Delta use
      record
        Dirs at 0 range 0 .. 5;
-       Steps at 0 range 6 .. 47;
+       Steps at 0 range 8 .. 55;
      end record;
+   --  Intentionally not densely packed as size = 54 breaks GCC.
 
    type Step_Delta_List is array (Step_Delta_List_Index) of Step_Delta
-   with Size => 48 * 2_048, Component_Size => 48, Scalar_Storage_Order => System.Low_Order_First;
+   with Size => 56 * 1_755, Component_Size => 56, Scalar_Storage_Order => System.Low_Order_First;
 
    type Fan_Target_List is array (Fan_Name) of Fixed_Point_PWM_Scale
    with Size => 16 * 4, Component_Size => 16, Scalar_Storage_Order => System.Low_Order_First;
@@ -315,7 +316,7 @@ package Messages is
        Heater_Targets at 48 range 0 .. 59;
        Last_Index at 64 range 0 .. 15;
        Safe_Stop_After at 66 range 0 .. 7;
-       Steps at 67 range 0 .. 98303;
+       Steps at 67 range 0 .. 98279;
        Conditon_Input_Switch at 32 range 0 .. 7;
        Skip_If_Hit_State at 33 range 0 .. 7;
        Heater_To_Check at 32 range 0 .. 7;

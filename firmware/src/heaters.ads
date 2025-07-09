@@ -62,7 +62,7 @@ private
 
    Heater_Setpoint_Holders : array (Heater_Name) of Setpoint_Holder;
 
-   task type Heater_Controller (Heater : Heater_Name := Heater_Name'First) with Storage_Size => 4 * 1_024 is
+   task type Heater_Controller (Heater : Heater_Name := Heater_Name'First) with Storage_Size => 2_600 is
    end Heater_Controller;
 
    Heater_Controller_1 : Heater_Controller (Heater_1);

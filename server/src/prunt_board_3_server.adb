@@ -719,8 +719,8 @@ procedure Prunt_Board_3_Server is
             Reconfigure_Low_Or_High_Side_Switching_Fan => Reconfigure_Fan'Access,
             Maximum_Low_Side_PWM_Frequency             => Fan_Maximum_Low_Side_Frequency,
             Maximum_High_Side_PWM_Frequency            => Fan_Maximum_High_Side_Frequency)),
-        Interpolation_Time               => 60_000.0 / 1_200_000_000.0 * s,
-        Loop_Interpolation_Time          => 60_000.0 / 1_200_000_000.0 * s,
+        Interpolation_Time               => 60_000.0 / 600_000_000.0 * s,
+        Loop_Interpolation_Time          => 60_000.0 / 600_000_000.0 * s,
         Setup                            => Setup,
         Reconfigure_Heater               => Reconfigure_Heater,
         Autotune_Heater                  => Autotune_Heater,
@@ -736,7 +736,7 @@ procedure Prunt_Board_3_Server is
         Update_Check                     =>
           (Method       => Github,
            Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_3_software"),
-           Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.4.0")));
+           Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.5.0")));
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence; Is_Fatal : Boolean := True) is
    begin
