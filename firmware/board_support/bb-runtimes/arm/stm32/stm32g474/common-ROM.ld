@@ -132,6 +132,9 @@ SECTIONS
    *(.interrupt_stacks)
    . = ALIGN(0x8);
    __interrupt_stack_end = .;
+
+   __heap_start = .;
+   __heap_end = ORIGIN(ccm_bs) + LENGTH(ccm_bs);
   } > ccm_bs
   __ccmbss_words = (__ccmbss_end - __ccmbss_start) >> 2;
 
@@ -144,9 +147,6 @@ SECTIONS
 
    . = ALIGN(0x8);    /* Align the stack to 64 bits */
    __bss_end = .;
-
-   __heap_start = .;
-   __heap_end = ORIGIN(sram_bs) + LENGTH(sram_bs);
   } > sram_bs
 
   __bss_words = (__bss_end - __bss_start) >> 2;
