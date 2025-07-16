@@ -109,7 +109,7 @@ procedure Prunt_Board_3_Server is
                                 Udev_Device_Get_Sysattr_Value (USB_Device, C_String_serial);
                            begin
                               if String'(Value (VID)) = "0483"
-                                and then String'(Value (PID)) = "a4f6"
+                                and then String'(Value (PID)) in "a4f6" | "a53b"
                                 and then String'(Value (Manufacturer)) = "Prunt 3D"
                                 and then String'(Value (Product)) = "Prunt Board 3"
                               then
