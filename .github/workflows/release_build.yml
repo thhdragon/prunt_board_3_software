@@ -17,6 +17,7 @@ jobs:
     - uses: alire-project/setup-alire@b607671067a8ca5d7b7f4a12dadb4dc009cd2cc7
 
     - run: >
+        sudo apt-get update &&
         sudo apt-get install -y python3-dev libffi-dev build-essential libncurses-dev gcc-arm-none-eabi binutils-arm-none-eabi libusb-1.0 &&
         make -C kalico &&
         bash -c 'cd firmware/board_support/bb-runtimes/ && ./runtimes.sh' &&
@@ -48,6 +49,7 @@ jobs:
         path: server/embedded_resources
 
     - run: >
+        sudo apt-get update &&
         sudo apt-get install -y libudev-dev &&
         cd server &&
         alr install are &&
@@ -82,6 +84,7 @@ jobs:
         path: server/embedded_resources
 
     - run: >
+        sudo apt-get update &&
         sudo apt-get install -y libudev-dev &&
         cd server &&
         PATH=$PATH:$HOME/.alire/bin make -C embedded_resources &&
