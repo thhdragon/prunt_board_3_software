@@ -477,8 +477,6 @@ procedure Prunt_Board_3_Server is
                   for X of Delta_Offset loop
                      if abs X > Dimensionless (Step_Count'Last) then
                         raise Constraint_Error with "Step rate too high. Delta_Offset = " & Delta_Offset'Image;
-                     --  TODO: Add a way to ensure that this will never occur based on the configuration.
-
                      end if;
                   end loop;
 
@@ -707,18 +705,19 @@ procedure Prunt_Board_3_Server is
      Prunt.Controller
        (Generic_Types                    => My_Controller_Generic_Types,
         Stepper_Hardware                 =>
-          (for S in Messages.Stepper_Name
-           => (Kind                 => TMC2240_UART_Kind,
-            Double_Edge_Stepping => True,
-            TMC2240_UART_Address => Stepper_UART_Address (S),
-            TMC2240_UART_Write   => TMC_Write'Access,
-            TMC2240_UART_Read    => TMC_Read'Access)),
+          (for S in Messages.Stepper_Name =>
+             (Kind                      => TMC2240_UART_Kind,
+              Maximum_Delta_Per_Command => Dimensionless (Step_Count'Last),
+              Double_Edge_Stepping      => True,
+              TMC2240_UART_Address      => Stepper_UART_Address (S),
+              TMC2240_UART_Write        => TMC_Write'Access,
+              TMC2240_UART_Read         => TMC_Read'Access)),
         Fan_Hardware                     =>
-          (for F in Messages.Fan_Name
-           => (Kind                                       => Low_Or_High_Side_Switching_Kind,
-            Reconfigure_Low_Or_High_Side_Switching_Fan => Reconfigure_Fan'Access,
-            Maximum_Low_Side_PWM_Frequency             => Fan_Maximum_Low_Side_Frequency,
-            Maximum_High_Side_PWM_Frequency            => Fan_Maximum_High_Side_Frequency)),
+          (for F in Messages.Fan_Name =>
+             (Kind                                       => Low_Or_High_Side_Switching_Kind,
+              Reconfigure_Low_Or_High_Side_Switching_Fan => Reconfigure_Fan'Access,
+              Maximum_Low_Side_PWM_Frequency             => Fan_Maximum_Low_Side_Frequency,
+              Maximum_High_Side_PWM_Frequency            => Fan_Maximum_High_Side_Frequency)),
         Interpolation_Time               => 60_000.0 / 600_000_000.0 * s,
         Loop_Interpolation_Time          => 60_000.0 / 600_000_000.0 * s,
         Setup                            => Setup,
@@ -736,7 +735,7 @@ procedure Prunt_Board_3_Server is
         Update_Check                     =>
           (Method       => Github,
            Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_3_software"),
-           Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.6.1")));
+           Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.6.2")));
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence; Is_Fatal : Boolean := True) is
    begin
