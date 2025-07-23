@@ -20,6 +20,8 @@ package Steppers is
       Read_Start_Time : Time    := Clock;
    end UART_IO;
 
+   TMC_UART_Error : exception;
+
 private
 
    Init_Checker : Init_Checkers.Init_Checker;

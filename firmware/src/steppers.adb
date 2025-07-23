@@ -3,7 +3,7 @@ with Hardware_Configuration; use Hardware_Configuration;
 with STM32.GPIO;             use STM32.GPIO;
 with STM32.Device;           use STM32.Device;
 with STM32.DMA;              use STM32.DMA;
-with TMC2240;
+with TMC2240;                use TMC2240;
 
 package body Steppers is
 
@@ -100,12 +100,46 @@ package body Steppers is
                   Disable_S2G          => TMC2240.False,
                   Disable_S2Vs         => TMC2240.False),
                others        => <>));
+
+         Query_Message : TMC2240.UART_Query_Message :=
+           (Bytes_Mode => False, Content => (Node => 1, Register => TMC2240.CHOPCONF_Address, others => <>));
       begin
          for I in TMC2240.UART_Node_Address range 1 .. 6 loop
-            delay until Clock + Milliseconds (10);
-            Message.Content.Node := I;
-            Message.Content.CRC := TMC2240.Compute_CRC (Message);
-            UART_IO.Write ((for I in 1 .. 8 => TMC2240_UART_Byte (Message.Bytes (9 - I))));
+            declare
+               Retry : Positive := 1;
+            begin
+               delay until Clock + Milliseconds (10);
+               Message.Content.Node := I;
+               Message.Content.CRC := TMC2240.Compute_CRC (Message);
+               UART_IO.Write ((for I in 1 .. 8 => TMC2240_UART_Byte (Message.Bytes (9 - I))));
+
+               delay until Clock + Milliseconds (10);
+               Query_Message.Content.Node := I;
+               Query_Message.Content.CRC := TMC2240.Compute_CRC (Query_Message);
+               UART_IO.Start_Read ((for I in 1 .. 4 => TMC2240_UART_Byte (Query_Message.Bytes (5 - I))));
+
+               declare
+                  Result         : TMC2240_UART_Data_Byte_Array;
+                  Result_Message : TMC2240.UART_Data_Message;
+               begin
+                  UART_IO.Get_Read_Result (Result);
+                  Result_Message.Bytes := (for I in 1 .. 8 => TMC2240.UART_Byte (Result (9 - I)));
+
+                  if Result_Message.Content.Node = 255
+                    and then Result_Message.Content.CRC = TMC2240.Compute_CRC (Result_Message)
+                    and then (Result_Message.Content with delta CRC => 0, Node => 0)
+                             = (Message.Content with delta CRC => 0, Node => 0, Is_Write => TMC2240.False)
+                  then
+                     exit;
+                  else
+                     Retry := @ + 1;
+                  end if;
+               end;
+
+               if Retry = 10 then
+                  raise TMC_UART_Error with "Failed to write initial CHOPCONF for " & I'Image;
+               end if;
+            end;
          end loop;
       end;
    end Init;
